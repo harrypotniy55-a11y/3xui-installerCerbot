@@ -1,3 +1,4 @@
+
 #!/bin/bash
 set -Eeuo pipefail
 
@@ -37,7 +38,9 @@ fi
 echo
 echo "Panel domain: $DOMAIN"
 echo "Email: $EMAIL"
+
 read -rp "Continue with these settings? [y/N]: " CONFIRM
+
 if [[ ! "$CONFIRM" =~ ^[Yy]$ ]]; then
     echo "Installation cancelled."
     exit 1
@@ -66,10 +69,12 @@ if ! command -v docker >/dev/null 2>&1; then
 fi
 
 systemctl enable --now docker
+
 if ! docker info >/dev/null 2>&1; then
     echo "ERROR: Docker Engine is not responding."
     exit 1
 fi
+
 echo "Docker is installed and running."
 
 # 4. Prepare Certbot storage
@@ -87,10 +92,12 @@ if [[ ! -s "$CERT" ]]; then
             echo "Starting nginx..."
             systemctl start nginx || echo "WARNING: Failed to start nginx"
         }
+
         trap restart_services EXIT
 
         echo "Stopping nginx..."
         systemctl stop nginx
+
         echo "Stopping x-ui..."
         systemctl stop x-ui
 
@@ -141,16 +148,19 @@ echo "========================================"
 # Ensure Docker is available
 if ! command -v docker >/dev/null 2>&1; then
     echo "Docker is missing. Installing official Docker package..."
+
     if ! command -v curl >/dev/null 2>&1; then
         apt-get update
         apt-get install -y curl
     fi
+
     curl -fsSL https://get.docker.com -o /tmp/get-docker.sh
     sh /tmp/get-docker.sh
     rm -f /tmp/get-docker.sh
 fi
 
 systemctl enable --now docker
+
 if ! docker info >/dev/null 2>&1; then
     echo "ERROR: Docker Engine is not responding."
     exit 1
@@ -166,6 +176,7 @@ NOW=$(date +%s)
 DAYS_LEFT=$(( (EXPIRY - NOW) / 86400 ))
 
 echo "Days until expiration: $DAYS_LEFT"
+
 if (( DAYS_LEFT > 7 )); then
     echo "Renewal not required. More than 7 days remaining."
     exit 0
@@ -177,10 +188,12 @@ restart_services() {
     echo "Starting nginx..."
     systemctl start nginx || echo "WARNING: Failed to start nginx"
 }
+
 trap restart_services EXIT
 
 echo "Stopping nginx..."
 systemctl stop nginx
+
 echo "Stopping x-ui..."
 systemctl stop x-ui
 
@@ -214,16 +227,38 @@ chmod 700 "$RENEW_SCRIPT"
 cat > /etc/cron.d/3xui-cert-renew <<'CRON_EOF'
 17 3 * * * root /usr/local/sbin/renew-3xui-cert.sh >> /var/log/3xui-cert-renew.log 2>&1
 CRON_EOF
+
 chmod 644 /etc/cron.d/3xui-cert-renew
+
 systemctl enable --now cron
 
+# 9. Final installation summary
 echo
-echo "========================================"
-echo "SSL CONFIGURATION COMPLETED"
-echo "========================================"
-echo "Panel domain: $DOMAIN"
-echo "Email: $EMAIL"
-echo "Certificate: $CERT"
-echo "Renewal script: $RENEW_SCRIPT"
-echo "Automatic renewal check: Daily at 03:17"
-echo "========================================"
+echo "================================================"
+echo "          SSL CONFIGURATION COMPLETED"
+echo "================================================"
+echo
+echo "PANEL INFORMATION"
+echo "------------------------------------------------"
+echo "Panel domain:       $DOMAIN"
+echo "Email:              $EMAIL"
+echo
+echo "SSL CERTIFICATE"
+echo "------------------------------------------------"
+echo "Certificate:        /etc/letsencrypt/live/$DOMAIN/fullchain.pem"
+echo "Private key:        /etc/letsencrypt/live/$DOMAIN/privkey.pem"
+echo
+echo "AUTOMATIC RENEWAL"
+echo "------------------------------------------------"
+echo "Renewal script:     $RENEW_SCRIPT"
+echo "Configuration:      $CONFIG_FILE"
+echo "Schedule:           Daily at 03:17"
+echo "Cron log:           /var/log/3xui-cert-renew.log"
+echo
+echo "DOCKER"
+echo "------------------------------------------------"
+echo "Docker status:      $(systemctl is-active docker)"
+echo
+echo "================================================"
+echo "       INSTALLATION FINISHED SUCCESSFULLY"
+echo "================================================"
