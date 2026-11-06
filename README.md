@@ -1,9 +1,10 @@
-Данный скрипт для автоматической установки Cerbot SSL сертификата для панели 3X-UI
+Данный скрипт для автоматической установки Cerbot SSL сертификата для панели 3X-UI.
 
-Команда выполнения скрипта: 
+Команда выполнения скрипта: bash <(curl -fsSL https://raw.githubusercontent.com/harrypotniy55-a11y/3xui-installerCerbot/refs/heads/main/3xui-ssl-setup.sh)
 
-curl -fL --retry 3 \
-"https://raw.githubusercontent.com/harrypotniy55-a11y/3xui-installerCerbot/refs/heads/main/3xui-ssl-setup.sh" \
--o /tmp/3xui-ssl-setup.sh && \
-bash -n /tmp/3xui-ssl-setup.sh && \
-bash /tmp/3xui-ssl-setup.sh
+Как это работает:
+1. Скачивает установщик напрямую с GitHub.
+2. Запускает его без необходимости предварительно сохранять файл.
+3. Запрашивает домен панели и email.
+4. Устанавливает Docker, если его нет.
+5. Настраивает SSL и автоматическое продление.
